@@ -3,29 +3,121 @@
 import sys, os
 import sqlite3
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QListWidgetItem
+from PyQt5.QtWidgets import QListWidgetItem, QWidget, QHBoxLayout, QLabel, QPushButton
 import warnings
 from datetime import datetime
 from PyQt5.QtCore import pyqtSignal
 
 warnings.filterwarnings('ignore', category=DeprecationWarning)
+
 def get_resource_path(relative_path):
     """Lấy đường dẫn tuyệt đối đến resource (icon, image, etc.)"""
     if getattr(sys, 'frozen', False):  
-        base_path = os.path.dirname(sys.executable)  # Lấy thư mục chứa file .exe
+        base_path = os.path.dirname(sys.executable)
     else:
         base_path = os.path.dirname(os.path.abspath(__file__))
-
     return os.path.join(base_path, relative_path)
 
+class ListItemWidget(QWidget):
+    """Custom widget cho mỗi item trong list"""
+    def __init__(self, ext_code, parent=None):
+        super().__init__(parent)
+        self.ext_code = ext_code
+        self.parent_list = parent
+        
+        # Tạo layout
+        layout = QHBoxLayout()
+        layout.setContentsMargins(10, 5, 10, 5)
+        
+        # Label hiển thị ext_code
+        self.label = QLabel(ext_code)
+        font = QtGui.QFont()
+        font.setPointSize(13)
+        font.setBold(True)
+        self.label.setFont(font)
+        
+        # Nút xóa với icon
+        self.delete_btn = QPushButton()
+        self.delete_btn.setFixedSize(40, 40)
+        self.delete_btn.setToolTip("Xóa item này")
+        self.delete_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #dc3545;
+                border: none;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #c82333;
+            }
+            QPushButton:pressed {
+                background-color: #bd2130;
+            }
+        """)
+        
+        # Set icon cho nút xóa
+        icon_path = get_resource_path("images/recycle-bin.png")
+        if os.path.exists(icon_path):
+            icon = QtGui.QIcon(icon_path)
+            self.delete_btn.setIcon(icon)
+            self.delete_btn.setIconSize(QtCore.QSize(24, 24))
+        else:
+            # Fallback nếu không tìm thấy icon
+            self.delete_btn.setText("X")
+            self.delete_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #dc3545;
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                    font-size: 16pt;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #c82333;
+                }
+            """)
+        
+        # Kết nối sự kiện xóa
+        self.delete_btn.clicked.connect(self.delete_item)
+        
+        # Thêm vào layout
+        layout.addWidget(self.label)
+        layout.addStretch()
+        layout.addWidget(self.delete_btn)
+        
+        self.setLayout(layout)
+    
+    def delete_item(self):
+        """Xóa item hiện tại"""
+        # Xác nhận trước khi xóa
+        reply = QtWidgets.QMessageBox.question(
+            self.parent_list.parent(),
+            "Xác nhận xóa",
+            f"Bạn có chắc chắn muốn xóa mã '{self.ext_code}' khỏi danh sách kế hoạch?",
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+            QtWidgets.QMessageBox.No
+        )
+        
+        if reply == QtWidgets.QMessageBox.Yes:
+            # Tìm và xóa item trong listWidget
+            for i in range(self.parent_list.count()):
+                item = self.parent_list.item(i)
+                if item and item.data(QtCore.Qt.UserRole) == self:
+                    self.parent_list.takeItem(i)
+                    break
+            
+            # Cập nhật lại thứ tự sau khi xóa
+            if hasattr(self.parent_list.parent(), 'update_order_after_delete'):
+                self.parent_list.parent().update_order_after_delete()
+
+
 class Ui_ChangePlan(object):
-    # Không khai báo signal ở đây
     def setupUi(self, ChangePlan):
         ChangePlan.setObjectName("ChangePlan")
-        ChangePlan.resize(654, 495)
+        ChangePlan.resize(700, 550)  # Tăng kích thước để chứa nút xóa
         self.listWidget = QtWidgets.QListWidget(ChangePlan)
         self.listWidget.setEnabled(False)
-        self.listWidget.setGeometry(QtCore.QRect(10, 10, 461, 481))
+        self.listWidget.setGeometry(QtCore.QRect(10, 10, 520, 481))
         self.listWidget.setObjectName("listWidget")
         
         # Style cho listWidget để item to hơn
@@ -37,22 +129,18 @@ class Ui_ChangePlan(object):
                 outline: none;
             }
             QListWidget::item {
-                padding: 12px;
+                padding: 0px;
                 border-bottom: 1px solid #dee2e6;
                 min-height: 55px;
             }
             QListWidget::item:selected {
-                background-color: #0d6efd;
-                color: white;
-            }
-            QListWidget::item:hover {
-                background-color: #e9ecef;
+                background-color: transparent;
             }
         """)
         
         self.SavePlan = QtWidgets.QPushButton(ChangePlan)
         self.SavePlan.setEnabled(False)
-        self.SavePlan.setGeometry(QtCore.QRect(480, 60, 161, 51))
+        self.SavePlan.setGeometry(QtCore.QRect(540, 60, 141, 51))
         font = QtGui.QFont()
         font.setPointSize(12)
         font.setBold(True)
@@ -86,7 +174,7 @@ class Ui_ChangePlan(object):
         self.SavePlan.setObjectName("SavePlan")
         
         self.OperatorChangePlan = QtWidgets.QLineEdit(ChangePlan)
-        self.OperatorChangePlan.setGeometry(QtCore.QRect(480, 10, 161, 41))
+        self.OperatorChangePlan.setGeometry(QtCore.QRect(540, 10, 141, 41))
         font = QtGui.QFont()
         font.setPointSize(15)
         self.OperatorChangePlan.setFont(font)
@@ -192,20 +280,21 @@ class ChangePlanWindow(QtWidgets.QWidget):
             
             # Thêm các item vào listWidget
             self.original_order = []
-            for idx, plan in enumerate(plans):
+            for plan in plans:
                 ext_code = plan[0]
-                item = QListWidgetItem(ext_code)
                 
-                # Set font đậm và to hơn
-                font = QtGui.QFont()
-                font.setPointSize(13)
-                font.setBold(True)
-                item.setFont(font)
+                # Tạo item và custom widget
+                item = QListWidgetItem()
+                item.setSizeHint(QtCore.QSize(0, 60))
                 
-                # Set chiều cao item
-                item.setSizeHint(QtCore.QSize(0, 50))
+                # Tạo widget cho item
+                widget = ListItemWidget(ext_code, self.ui.listWidget)
                 
                 self.ui.listWidget.addItem(item)
+                self.ui.listWidget.setItemWidget(item, widget)
+                
+                # Lưu reference để xử lý sau
+                item.setData(QtCore.Qt.UserRole, widget)
                 self.original_order.append(ext_code)
             
             # Enable nút Save
@@ -217,14 +306,37 @@ class ChangePlanWindow(QtWidgets.QWidget):
             if conn:
                 conn.close()
     
+    def get_current_order(self):
+        """Lấy thứ tự hiện tại từ listWidget"""
+        current_order = []
+        for i in range(self.ui.listWidget.count()):
+            item = self.ui.listWidget.item(i)
+            widget = self.ui.listWidget.itemWidget(item)
+            if widget:
+                current_order.append(widget.ext_code)
+        return current_order
+    
+    def update_order_after_delete(self):
+        """Cập nhật sau khi xóa item"""
+        # Cập nhật lại original_order
+        self.original_order = self.get_current_order()
+        
+        # Hiển thị thông báo
+        QtWidgets.QMessageBox.information(
+            self,
+            "Thành công",
+            f"Đã xóa item khỏi danh sách!\n\nSố lượng còn lại: {len(self.original_order)} mã."
+        )
+    
     def save_plan_order(self):
         """Lưu thứ tự mới của plan vào database (không xóa dữ liệu)"""
         
         # Lấy thứ tự hiện tại từ listWidget
-        current_order = []
-        for i in range(self.ui.listWidget.count()):
-            item = self.ui.listWidget.item(i)
-            current_order.append(item.text())
+        current_order = self.get_current_order()
+        
+        if not current_order:
+            QtWidgets.QMessageBox.warning(self, "Cảnh báo", "Không có dữ liệu để lưu!")
+            return
         
         # Kiểm tra xem có thay đổi thứ tự không
         if current_order == self.original_order:
@@ -262,11 +374,20 @@ class ChangePlanWindow(QtWidgets.QWidget):
             # Bắt đầu transaction
             cursor.execute('BEGIN TRANSACTION')
             
-            # Cập nhật sort_order cho từng record
+            # Xóa toàn bộ dữ liệu cũ (vì có thể có item đã bị xóa)
+            cursor.execute('DELETE FROM plan')
+            
+            # Ghi vào history hành động xóa
+            cursor.execute('''
+                INSERT INTO history (ext_code, operator_code, action, timestamp)
+                VALUES (?, ?, ?, ?)
+            ''', ('ALL', self.validated_operator, 'CLEAR_PLAN_TABLE_FOR_UPDATE', datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            
+            # Chèn lại dữ liệu với thứ tự mới
             for idx, ext_code in enumerate(current_order):
-                cursor.execute('UPDATE plan SET sort_order = ? WHERE ext_code = ?', (idx, ext_code))
+                cursor.execute('INSERT INTO plan (ext_code, sort_order) VALUES (?, ?)', (ext_code, idx))
                 
-                # Ghi vào history cho từng thay đổi
+                # Ghi vào history
                 cursor.execute('''
                     INSERT INTO history (ext_code, operator_code, action, timestamp)
                     VALUES (?, ?, ?, ?)
