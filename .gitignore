@@ -1,0 +1,33 @@
+# Node
+node_modules/
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Build
+build/
+/build/
+dist/
+ImportPlan.onefile-build/
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Logs
+logs/
+*.log
+
+# Office temp files
+~$*
