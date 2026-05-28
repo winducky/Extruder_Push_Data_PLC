@@ -854,11 +854,11 @@ class Ui_MainWindow(object):
             conn.commit()
             
             # Hiển thị thông báo thành công
-            QtWidgets.QMessageBox.information(
-                None,
-                "Thành công",
-                f"Đã load chương trình cho mã:\n{current_ext_code}\n\nĐã xóa khỏi danh sách kế hoạch!"
-            )
+            # QtWidgets.QMessageBox.information(
+            #     None,
+            #     "Thành công",
+            #     f"Đã load chương trình cho mã:\n{current_ext_code}\n\nĐã xóa khỏi danh sách kế hoạch!"
+            # )
             
             # Load item tiếp theo
             self.load_first_plan()

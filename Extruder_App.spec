@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['GiaoDien.py'],
+    ['D:\\App\\Production\\Extruder3\\Application\\GiaoDien.py'],
     pathex=[],
     binaries=[],
     datas=[],
@@ -35,5 +35,6 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['D:\\App\\icon.ico'],
+    version='D:\\App\\Production\\Extruder3\\Application\\version.txt',
+    icon=['D:\\App\\Production\\Extruder3\\Application\\icon.ico'],
 )
