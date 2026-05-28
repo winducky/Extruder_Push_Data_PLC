@@ -698,9 +698,9 @@ class Ui_MainWindow(object):
     def open_import_plan(self):
         from ImportPlan import ImportPlanWindow
         self.import_plan_window = ImportPlanWindow()
+        # Kết nối signal để reload dữ liệu khi import xong
+        self.import_plan_window.plan_imported.connect(self.on_plan_changed)
         self.import_plan_window.show()
-        # Kết nối sự kiện khi import xong để refresh
-        self.import_plan_window.destroyed.connect(self.load_first_plan)
 
     def open_change_plan(self):
         from ChangePlan import ChangePlanWindow

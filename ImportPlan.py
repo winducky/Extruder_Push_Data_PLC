@@ -5,6 +5,8 @@ import warnings
 import pandas as pd
 import os
 from datetime import datetime
+from PyQt5.QtCore import pyqtSignal
+
 
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 def get_resource_path(relative_path):
@@ -94,6 +96,7 @@ class Ui_ImportPlan(object):
 
 
 class ImportPlanWindow(QtWidgets.QWidget):
+    plan_imported = pyqtSignal()
     def __init__(self):
         super().__init__()
         self.ui = Ui_ImportPlan()
@@ -327,6 +330,7 @@ class ImportPlanWindow(QtWidgets.QWidget):
             
             # Nếu có dữ liệu được import thành công, đóng cửa sổ
             if success_count > 0:
+                self.plan_imported.emit()
                 self.close()
                         
         except sqlite3.Error as e:
