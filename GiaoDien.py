@@ -744,7 +744,15 @@ class Ui_MainWindow(object):
         finally:
             if conn:
                 conn.close()
-    
+
+    # Hàm tiện ích để format số, nếu là float mà có phần thập phân là .0 thì chỉ hiển thị phần nguyên
+    def format_number(self, value):
+        if value is None:
+            return ""
+        if isinstance(value, float) and value.is_integer():
+            return str(int(value))
+        return str(value)
+    # Hàm để load dữ liệu spec theo ext_code
     def load_spec_data(self, ext_code):
         """Load dữ liệu từ bảng spec theo ext_code"""
         conn = None
@@ -770,18 +778,18 @@ class Ui_MainWindow(object):
                 
                 # Gán dữ liệu vào các trường
                 self.TireName.setText(str(tire_name) if tire_name else "")
-                self.Length.setText(str(length) if length else "")
-                self.Height.setText(str(height) if height else "")
-                self.Weight.setText(str(weight) if weight else "")
-                self.UpperScrew.setText(str(upper_screw) if upper_screw else "")
-                self.LowerScrew.setText(str(lower_screw) if lower_screw else "")
-                self.RollSpeed.setText(str(roll_speed) if roll_speed else "")
-                self.TUCSpeed.setText(str(tuc_speed) if tuc_speed else "")
-                self.ConveyoRoller.setText(str(conveyor_roller) if conveyor_roller else "")
-                self.ConveyorSlope.setText(str(conveyor_slope) if conveyor_slope else "")
-                self.ConveyorRollerBelts.setText(str(roller_belt) if roller_belt else "")
-                self.ConveyorCoolingBelt.setText(str(cooling_belt) if cooling_belt else "")
-                self.TUCRoller.setText(str(tuc_roller) if tuc_roller else "")
+                self.Length.setText(self.format_number(length))
+                self.Height.setText(self.format_number(height))
+                self.Weight.setText(self.format_number(weight))
+                self.UpperScrew.setText(self.format_number(upper_screw))
+                self.LowerScrew.setText(self.format_number(lower_screw))
+                self.RollSpeed.setText(self.format_number(roll_speed))
+                self.TUCSpeed.setText(self.format_number(tuc_speed))
+                self.ConveyoRoller.setText(self.format_number(conveyor_roller))
+                self.ConveyorSlope.setText(self.format_number(conveyor_slope))
+                self.ConveyorRollerBelts.setText(self.format_number(roller_belt))
+                self.ConveyorCoolingBelt.setText(self.format_number(cooling_belt))
+                self.TUCRoller.setText(self.format_number(tuc_roller))
             else:
                 # Không tìm thấy spec, clear các field
                 self.clear_all_fields()

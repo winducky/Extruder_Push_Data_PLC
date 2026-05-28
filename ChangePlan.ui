@@ -26,7 +26,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QPushButton" name="LoadDataToPLC_2">
+  <widget class="QPushButton" name="SavePlan">
    <property name="enabled">
     <bool>false</bool>
    </property>

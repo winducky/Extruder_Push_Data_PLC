@@ -96,6 +96,11 @@ Width
         <height>61</height>
        </rect>
       </property>
+      <property name="font">
+       <font>
+        <pointsize>18</pointsize>
+       </font>
+      </property>
       <property name="autoFillBackground">
        <bool>false</bool>
       </property>
@@ -180,6 +185,11 @@ Height
         <height>61</height>
        </rect>
       </property>
+      <property name="font">
+       <font>
+        <pointsize>18</pointsize>
+       </font>
+      </property>
       <property name="autoFillBackground">
        <bool>false</bool>
       </property>
@@ -263,6 +273,11 @@ Weight
         <width>321</width>
         <height>61</height>
        </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>18</pointsize>
+       </font>
       </property>
       <property name="autoFillBackground">
        <bool>false</bool>
@@ -361,6 +376,11 @@ Upper Screw
         <height>61</height>
        </rect>
       </property>
+      <property name="font">
+       <font>
+        <pointsize>18</pointsize>
+       </font>
+      </property>
       <property name="autoFillBackground">
        <bool>false</bool>
       </property>
@@ -444,6 +464,11 @@ Lower Screw
         <width>481</width>
         <height>61</height>
        </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>18</pointsize>
+       </font>
       </property>
       <property name="autoFillBackground">
        <bool>false</bool>
@@ -529,6 +554,11 @@ Con lăn đầu tiên
         <height>61</height>
        </rect>
       </property>
+      <property name="font">
+       <font>
+        <pointsize>18</pointsize>
+       </font>
+      </property>
       <property name="autoFillBackground">
        <bool>false</bool>
       </property>
@@ -613,6 +643,11 @@ Roll TUC Speed
         <height>61</height>
        </rect>
       </property>
+      <property name="font">
+       <font>
+        <pointsize>18</pointsize>
+       </font>
+      </property>
       <property name="autoFillBackground">
        <bool>false</bool>
       </property>
@@ -692,6 +727,11 @@ Conveyor Rollers
         <height>61</height>
        </rect>
       </property>
+      <property name="font">
+       <font>
+        <pointsize>18</pointsize>
+       </font>
+      </property>
       <property name="autoFillBackground">
        <bool>false</bool>
       </property>
@@ -754,6 +794,11 @@ Conveyor Slope
         <width>181</width>
         <height>61</height>
        </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>18</pointsize>
+       </font>
       </property>
       <property name="autoFillBackground">
        <bool>false</bool>
@@ -818,6 +863,11 @@ Roller Conveyor Belts
         <height>61</height>
        </rect>
       </property>
+      <property name="font">
+       <font>
+        <pointsize>18</pointsize>
+       </font>
+      </property>
       <property name="autoFillBackground">
        <bool>false</bool>
       </property>
@@ -881,6 +931,11 @@ No. 1 Cooling Conveyor Belt
         <height>61</height>
        </rect>
       </property>
+      <property name="font">
+       <font>
+        <pointsize>18</pointsize>
+       </font>
+      </property>
       <property name="autoFillBackground">
        <bool>false</bool>
       </property>
@@ -943,6 +998,11 @@ TUC Roller
         <width>201</width>
         <height>61</height>
        </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>18</pointsize>
+       </font>
       </property>
       <property name="autoFillBackground">
        <bool>false</bool>
@@ -1010,7 +1070,7 @@ Extruder Code
      </property>
      <property name="font">
       <font>
-       <pointsize>15</pointsize>
+       <pointsize>18</pointsize>
       </font>
      </property>
      <property name="autoFillBackground">
@@ -1128,6 +1188,11 @@ Tire Code
        <width>481</width>
        <height>61</height>
       </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>18</pointsize>
+      </font>
      </property>
      <property name="autoFillBackground">
       <bool>false</bool>

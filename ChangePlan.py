@@ -11,13 +11,11 @@ from PyQt5.QtCore import pyqtSignal
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 def get_resource_path(relative_path):
     """Lấy đường dẫn tuyệt đối đến resource (icon, image, etc.)"""
-    try:
-        # PyInstaller tạo biến _MEIPASS khi đóng gói
-        base_path = sys._MEIPASS
-    except Exception:
-        # Chạy trong môi trường development
-        base_path = os.path.abspath(".")
-    
+    if getattr(sys, 'frozen', False):  
+        base_path = os.path.dirname(sys.executable)  # Lấy thư mục chứa file .exe
+    else:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+
     return os.path.join(base_path, relative_path)
 
 class Ui_ChangePlan(object):
