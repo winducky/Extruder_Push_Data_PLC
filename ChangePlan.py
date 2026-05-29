@@ -20,17 +20,18 @@ def get_resource_path(relative_path):
 
 class ListItemWidget(QWidget):
     """Custom widget cho mỗi item trong list"""
-    def __init__(self, ext_code, parent=None):
+    def __init__(self, ext_code, plan_code, parent=None):
         super().__init__(parent)
         self.ext_code = ext_code
+        self.plan_code = plan_code
         self.parent_list = parent
         
         # Tạo layout
         layout = QHBoxLayout()
         layout.setContentsMargins(10, 5, 10, 5)
         
-        # Label hiển thị ext_code
-        self.label = QLabel(ext_code)
+        # Label hiển thị ext_code và plan_code
+        self.label = QLabel(f"{ext_code} - {plan_code}")
         font = QtGui.QFont()
         font.setPointSize(13)
         font.setBold(True)
@@ -61,7 +62,6 @@ class ListItemWidget(QWidget):
             self.delete_btn.setIcon(icon)
             self.delete_btn.setIconSize(QtCore.QSize(24, 24))
         else:
-            # Fallback nếu không tìm thấy icon
             self.delete_btn.setText("X")
             self.delete_btn.setStyleSheet("""
                 QPushButton {
@@ -89,11 +89,10 @@ class ListItemWidget(QWidget):
     
     def delete_item(self):
         """Xóa item hiện tại"""
-        # Xác nhận trước khi xóa
         reply = QtWidgets.QMessageBox.question(
             self.parent_list.parent(),
             "Xác nhận xóa",
-            f"Bạn có chắc chắn muốn xóa mã '{self.ext_code}' khỏi danh sách kế hoạch?",
+            f"Bạn có chắc chắn muốn xóa mã '{self.ext_code}' (Plan: {self.plan_code}) khỏi danh sách kế hoạch?",
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
             QtWidgets.QMessageBox.No
         )
@@ -110,11 +109,12 @@ class ListItemWidget(QWidget):
             if hasattr(self.parent_list.parent(), 'update_order_after_delete'):
                 self.parent_list.parent().update_order_after_delete()
 
-
 class Ui_ChangePlan(object):
     def setupUi(self, ChangePlan):
         ChangePlan.setObjectName("ChangePlan")
         ChangePlan.resize(700, 550)  # Tăng kích thước để chứa nút xóa
+        ChangePlan.setMinimumSize(QtCore.QSize(700, 550))
+        ChangePlan.setMaximumSize(QtCore.QSize(700, 550))   
         self.listWidget = QtWidgets.QListWidget(ChangePlan)
         self.listWidget.setEnabled(False)
         self.listWidget.setGeometry(QtCore.QRect(10, 10, 520, 481))
@@ -208,6 +208,7 @@ class ChangePlanWindow(QtWidgets.QWidget):
         # Biến lưu operator_code đã xác thực
         self.validated_operator = None
         self.original_order = []  # Lưu thứ tự ban đầu để so sánh
+        self.current_plan_code = None  # Lưu plan_code hiện tại để sử dụng khi lưu
     
     def check_operator(self):
         """Kiểm tra operator trong database"""
@@ -252,60 +253,69 @@ class ChangePlanWindow(QtWidgets.QWidget):
                 conn.close()
     
     def load_plan_list(self):
-        """Load danh sách ext_code từ bảng plan vào listWidget theo sort_order"""
+        """Load danh sách ext_code và plan_code từ bảng plan vào listWidget theo sort_order"""
         conn = None
         try:
             conn = sqlite3.connect('extruder.sqlite')
             cursor = conn.cursor()
             
-            # Kiểm tra xem cột sort_order có tồn tại không
-            cursor.execute("PRAGMA table_info(plan)")
-            columns = [column[1] for column in cursor.fetchall()]
+            # Lấy tất cả dữ liệu từ bảng plan, sắp xếp theo sort_order
+            cursor.execute('''
+                SELECT ext_code, plan_code, id, sort_order 
+                FROM plan 
+                ORDER BY sort_order, plan_code, id
+            ''')
             
-            if 'sort_order' in columns:
-                # Lấy dữ liệu theo sort_order
-                cursor.execute('SELECT ext_code FROM plan ORDER BY sort_order, id')
-            else:
-                # Nếu chưa có cột sort_order, lấy theo id
-                cursor.execute('SELECT ext_code FROM plan ORDER BY id')
+            plans_data = cursor.fetchall()
             
-            plans = cursor.fetchall()
-            
-            if not plans:
+            if not plans_data:
                 QtWidgets.QMessageBox.warning(self, "Cảnh báo", "Không có dữ liệu kế hoạch trong database!")
                 return
             
             # Xóa dữ liệu cũ trong listWidget
             self.ui.listWidget.clear()
             
-            # Thêm các item vào listWidget
+            # Lưu dữ liệu gốc
             self.original_order = []
-            for plan in plans:
-                ext_code = plan[0]
-                
+            
+            # Thêm các item vào listWidget
+            for ext_code, plan_code, record_id, sort_order in plans_data:
                 # Tạo item và custom widget
                 item = QListWidgetItem()
                 item.setSizeHint(QtCore.QSize(0, 60))
                 
                 # Tạo widget cho item
-                widget = ListItemWidget(ext_code, self.ui.listWidget)
+                widget = ListItemWidget(ext_code, plan_code, self.ui.listWidget)
                 
                 self.ui.listWidget.addItem(item)
                 self.ui.listWidget.setItemWidget(item, widget)
                 
-                # Lưu reference để xử lý sau
-                item.setData(QtCore.Qt.UserRole, widget)
-                self.original_order.append(ext_code)
+                # Lưu thông tin vào widget để có thể truy xuất sau
+                widget.record_id = record_id
+                widget.original_sort_order = sort_order
+                
+                self.original_order.append({
+                    'ext_code': ext_code,
+                    'plan_code': plan_code,
+                    'id': record_id,
+                    'sort_order': sort_order
+                })
             
             # Enable nút Save
             self.ui.SavePlan.setEnabled(True)
+            
+            # Hiển thị tổng số item lên title
+            self.setWindowTitle(f"Change Plan - Tổng số: {len(plans_data)} mã")
+            
+            # Cho phép kéo thả
+            self.ui.listWidget.setDragDropMode(QtWidgets.QListWidget.InternalMove)
             
         except sqlite3.Error as e:
             QtWidgets.QMessageBox.critical(self, "Lỗi Database", f"Không thể đọc dữ liệu: {str(e)}")
         finally:
             if conn:
                 conn.close()
-    
+
     def get_current_order(self):
         """Lấy thứ tự hiện tại từ listWidget"""
         current_order = []
@@ -313,23 +323,58 @@ class ChangePlanWindow(QtWidgets.QWidget):
             item = self.ui.listWidget.item(i)
             widget = self.ui.listWidget.itemWidget(item)
             if widget:
-                current_order.append(widget.ext_code)
+                current_order.append({
+                    'ext_code': widget.ext_code,
+                    'plan_code': widget.plan_code
+                })
         return current_order
-    
-    def update_order_after_delete(self):
-        """Cập nhật sau khi xóa item"""
-        # Cập nhật lại original_order
-        self.original_order = self.get_current_order()
+
+    def update_sort_order_after_drag(self):
+        """Cập nhật sort_order sau khi kéo thả"""
+        # Lấy thứ tự hiện tại từ listWidget
+        current_order = self.get_current_order()
         
-        # Hiển thị thông báo
-        QtWidgets.QMessageBox.information(
-            self,
-            "Thành công",
-            f"Đã xóa item khỏi danh sách!\n\nSố lượng còn lại: {len(self.original_order)} mã."
-        )
-    
+        if not current_order:
+            return
+        
+        # Kiểm tra xem có thay đổi thứ tự không
+        current_ext_codes = [item['ext_code'] for item in current_order]
+        original_ext_codes = [item['ext_code'] for item in self.original_order]
+        
+        if current_ext_codes == original_ext_codes:
+            return
+        
+        # Cập nhật lại sort_order trong database tạm thời
+        conn = None
+        try:
+            conn = sqlite3.connect('extruder.sqlite')
+            cursor = conn.cursor()
+            
+            cursor.execute('BEGIN TRANSACTION')
+            
+            # Cập nhật sort_order tạm thời để lưu vị trí mới
+            for idx, item in enumerate(current_order):
+                cursor.execute('''
+                    UPDATE plan 
+                    SET sort_order = ? 
+                    WHERE ext_code = ? AND plan_code = ?
+                ''', (idx, item['ext_code'], item['plan_code']))
+            
+            conn.commit()
+            
+            # Cập nhật original_order
+            self.original_order = current_order.copy()
+            
+        except sqlite3.Error as e:
+            if conn:
+                conn.rollback()
+            print(f"Lỗi khi cập nhật sort_order: {str(e)}")
+        finally:
+            if conn:
+                conn.close()
+
     def save_plan_order(self):
-        """Lưu thứ tự mới của plan vào database (không xóa dữ liệu)"""
+        """Lưu thứ tự mới của plan vào database (chỉ update sort_order, giữ nguyên plan_code)"""
         
         # Lấy thứ tự hiện tại từ listWidget
         current_order = self.get_current_order()
@@ -338,17 +383,13 @@ class ChangePlanWindow(QtWidgets.QWidget):
             QtWidgets.QMessageBox.warning(self, "Cảnh báo", "Không có dữ liệu để lưu!")
             return
         
-        # Kiểm tra xem có thay đổi thứ tự không
-        if current_order == self.original_order:
-            QtWidgets.QMessageBox.information(self, "Thông báo", "Không có thay đổi về thứ tự!")
-            return
-        
         # Xác nhận lưu thay đổi
         reply = QtWidgets.QMessageBox.question(
             self,
             "Xác nhận",
             f"Bạn có chắc chắn muốn thay đổi thứ tự kế hoạch?\n\n"
-            f"Số lượng mã: {len(current_order)}\n\n"
+            f"Tổng số mã: {len(current_order)}\n"
+            f"Số lượng plan_code: {len(set([item['plan_code'] for item in current_order]))}\n\n"
             f"Hành động này sẽ cập nhật thứ tự trong database.",
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
             QtWidgets.QMessageBox.No
@@ -362,47 +403,54 @@ class ChangePlanWindow(QtWidgets.QWidget):
             conn = sqlite3.connect('extruder.sqlite')
             cursor = conn.cursor()
             
-            # Kiểm tra xem cột sort_order có tồn tại không
-            cursor.execute("PRAGMA table_info(plan)")
-            columns = [column[1] for column in cursor.fetchall()]
-            
-            # Nếu chưa có cột sort_order, thêm mới
-            if 'sort_order' not in columns:
-                cursor.execute('ALTER TABLE plan ADD COLUMN sort_order INTEGER DEFAULT 0')
-                print("Đã thêm cột sort_order vào bảng plan")
-            
             # Bắt đầu transaction
             cursor.execute('BEGIN TRANSACTION')
             
-            # Xóa toàn bộ dữ liệu cũ (vì có thể có item đã bị xóa)
-            cursor.execute('DELETE FROM plan')
-            
-            # Ghi vào history hành động xóa
-            cursor.execute('''
-                INSERT INTO history (ext_code, operator_code, action, timestamp)
-                VALUES (?, ?, ?, ?)
-            ''', ('ALL', self.validated_operator, 'CLEAR_PLAN_TABLE_FOR_UPDATE', datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-            
-            # Chèn lại dữ liệu với thứ tự mới
-            for idx, ext_code in enumerate(current_order):
-                cursor.execute('INSERT INTO plan (ext_code, sort_order) VALUES (?, ?)', (ext_code, idx))
+            # Cập nhật sort_order cho từng record dựa trên vị trí hiện tại
+            updated_count = 0
+            for idx, item in enumerate(current_order):
+                ext_code = item['ext_code']
+                plan_code = item['plan_code']
                 
-                # Ghi vào history
+                # Update sort_order theo vị trí mới
                 cursor.execute('''
-                    INSERT INTO history (ext_code, operator_code, action, timestamp)
-                    VALUES (?, ?, ?, ?)
-                ''', (ext_code, self.validated_operator, f'UPDATE_SORT_ORDER_TO_{idx}', datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                    UPDATE plan 
+                    SET sort_order = ? 
+                    WHERE ext_code = ? AND plan_code = ?
+                ''', (idx, ext_code, plan_code))
+                
+                if cursor.rowcount > 0:
+                    updated_count += 1
+                    
+                    # Ghi vào history
+                    cursor.execute('''
+                        INSERT INTO history (ext_code, operator_code, action, plan_code, timestamp)
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (ext_code, self.validated_operator, f'UPDATE_SORT_ORDER_TO_{idx}', plan_code,
+                        datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
             
             # Commit transaction
             conn.commit()
             
-            # Cập nhật original_order
+            # Cập nhật original_order với thứ tự mới
             self.original_order = current_order.copy()
+            
+            # Nhóm theo plan_code để hiển thị chi tiết
+            plan_groups = {}
+            for item in current_order:
+                plan_code = item['plan_code']
+                if plan_code not in plan_groups:
+                    plan_groups[plan_code] = 0
+                plan_groups[plan_code] += 1
+            
+            plan_summary = "\n".join([f"  - {plan_code}: {count} mã" for plan_code, count in plan_groups.items()])
             
             QtWidgets.QMessageBox.information(
                 self,
                 "Thành công",
-                f"Đã lưu thứ tự kế hoạch mới!\n\nSố lượng: {len(current_order)} mã."
+                f"Đã lưu thứ tự kế hoạch mới!\n\n"
+                f"Tổng số: {updated_count}/{len(current_order)} mã.\n"
+                f"Chi tiết theo plan_code:\n{plan_summary}"
             )
             
             # Phát signal thông báo đã thay đổi

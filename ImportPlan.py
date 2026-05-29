@@ -170,26 +170,34 @@ class ImportPlanWindow(QtWidgets.QWidget):
             self.ui.btnImportPlan.setEnabled(False)
     
     def read_excel_file(self, file_path):
-        """Đọc file Excel và lấy dữ liệu từ cột B (index 1) từ dòng B2 trở đi"""
+        """Đọc file Excel, mỗi dòng lấy ext_code từ cột B và plan_code từ cột C"""
         try:
             # Đọc file Excel
             df = pd.read_excel(file_path, header=None)
             
-            # Lấy cột B (index 1) từ dòng 2 (index 1) trở đi
-            # Bỏ qua các dòng trống và NaN
-            ext_codes = df.iloc[1:, 1].dropna().tolist()
+            data_list = []
             
-            # Chuyển đổi sang string và loại bỏ khoảng trắng
-            ext_codes = [str(code).strip() for code in ext_codes if str(code).strip()]
+            # Duyệt từ dòng 2 (index 1) đến hết
+            for idx in range(1, len(df)):
+                # Lấy ext_code từ cột B (index 1)
+                ext_code_value = df.iloc[idx, 1] if len(df.columns) > 1 else None
+                # Lấy plan_code từ cột C (index 2)
+                plan_code_value = df.iloc[idx, 2] if len(df.columns) > 2 else None
+                
+                if pd.notna(ext_code_value) and pd.notna(plan_code_value):
+                    ext_code = str(ext_code_value).strip()
+                    plan_code = str(plan_code_value).strip()
+                    if ext_code and plan_code:
+                        data_list.append((ext_code, plan_code))
             
-            return ext_codes
+            return data_list
             
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, "Lỗi Đọc File", f"Không thể đọc file Excel:\n{str(e)}")
             return []
     
     def read_csv_file(self, file_path):
-        """Đọc file CSV và lấy dữ liệu từ cột B (cột thứ 2) từ dòng 2 trở đi"""
+        """Đọc file CSV, mỗi dòng lấy ext_code từ cột B và plan_code từ cột C"""
         try:
             # Đọc file CSV với nhiều encoding khác nhau
             encodings = ['utf-8', 'latin1', 'cp1252', 'utf-16']
@@ -205,13 +213,22 @@ class ImportPlanWindow(QtWidgets.QWidget):
             if df is None:
                 raise Exception("Không thể đọc file CSV với bất kỳ encoding nào")
             
-            # Lấy cột thứ 2 (index 1) từ dòng 2 (index 1) trở đi
-            ext_codes = df.iloc[1:, 1].dropna().tolist()
+            data_list = []
             
-            # Chuyển đổi sang string và loại bỏ khoảng trắng
-            ext_codes = [str(code).strip() for code in ext_codes if str(code).strip()]
+            # Duyệt từ dòng 2 (index 1) đến hết
+            for idx in range(1, len(df)):
+                # Lấy ext_code từ cột B (index 1)
+                ext_code_value = df.iloc[idx, 1] if len(df.columns) > 1 else None
+                # Lấy plan_code từ cột C (index 2)
+                plan_code_value = df.iloc[idx, 2] if len(df.columns) > 2 else None
+                
+                if pd.notna(ext_code_value) and pd.notna(plan_code_value):
+                    ext_code = str(ext_code_value).strip()
+                    plan_code = str(plan_code_value).strip()
+                    if ext_code and plan_code:
+                        data_list.append((ext_code, plan_code))
             
-            return ext_codes
+            return data_list
             
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, "Lỗi Đọc File", f"Không thể đọc file CSV:\n{str(e)}")
@@ -229,7 +246,11 @@ class ImportPlanWindow(QtWidgets.QWidget):
         return False
     
     def import_plan(self):
-        """Xử lý import kế hoạch (xóa dữ liệu cũ trước khi import và thêm sort_order)"""
+        """Xử lý import kế hoạch:
+        1. Xóa hết dữ liệu trong bảng plan
+        2. Kiểm tra từng dòng: nếu plan_code đã được SYSTEM LOAD_THE_PROGRAM trong ngày thì bỏ qua
+        3. Thêm các dòng chưa được load vào plan với sort_order theo thứ tự trong file
+        """
         file_path = self.ui.ImportFilePath.text().strip()
         
         if not file_path:
@@ -245,94 +266,183 @@ class ImportPlanWindow(QtWidgets.QWidget):
         file_extension = os.path.splitext(file_path)[1].lower()
         
         if file_extension in ['.xlsx', '.xls', '.xlsm']:
-            ext_codes = self.read_excel_file(file_path)
+            data_list = self.read_excel_file(file_path)
         elif file_extension == '.csv':
-            ext_codes = self.read_csv_file(file_path)
+            data_list = self.read_csv_file(file_path)
         else:
             QtWidgets.QMessageBox.warning(self, "Lỗi", "Định dạng file không được hỗ trợ!")
             return
         
-        if not ext_codes:
-            QtWidgets.QMessageBox.warning(self, "Cảnh báo", "Không tìm thấy dữ liệu ExtCode trong file (cột B từ dòng 2 trở đi)!")
+        if not data_list:
+            QtWidgets.QMessageBox.warning(self, "Cảnh báo", "Không tìm thấy dữ liệu trong file!")
             return
         
-        # Xác nhận import
-        reply = QtWidgets.QMessageBox.question(
-            self, 
-            "Xác nhận Import", 
-            f"⚠️ CẢNH BÁO: Toàn bộ dữ liệu cũ trong bảng PLAN sẽ bị XÓA!\n\n"
-            f"Tìm thấy {len(ext_codes)} mã ExtCode mới.\n\n"
-            f"Danh sách mã mới:\n{', '.join(ext_codes[:10])}{'...' if len(ext_codes) > 10 else ''}\n\n"
-            f"Bạn có chắc chắn muốn thay thế toàn bộ dữ liệu không?",
-            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
-            QtWidgets.QMessageBox.No
-        )
+        # Hiển thị danh sách dữ liệu đọc được để debug
+        print(f"Đọc được {len(data_list)} dòng dữ liệu")
+        for ext_code, plan_code in data_list[:5]:
+            print(f"ExtCode: {ext_code}, PlanCode: {plan_code}")
         
-        if reply != QtWidgets.QMessageBox.Yes:
-            return
+        current_date = datetime.now().strftime('%Y-%m-%d')
+        print(f"Ngày hiện tại: {current_date}")
         
-        # Import vào database
         conn = None
-        success_count = 0
-        error_count = 0
+        valid_data = []  # Danh sách dữ liệu hợp lệ (ext_code, plan_code)
+        invalid_data = []  # Danh sách dữ liệu không hợp lệ (ext_code, plan_code, lý do)
         
         try:
             conn = sqlite3.connect('extruder.sqlite')
             cursor = conn.cursor()
             
-            # Kiểm tra và thêm cột sort_order nếu chưa có
-            self.ensure_sort_order_column(cursor)
+            # Kiểm tra từng dòng trong file theo plan_code
+            for ext_code, plan_code in data_list:
+                if not ext_code or not plan_code:
+                    continue
+                    
+                plan_code = plan_code.strip()
+                ext_code = ext_code.strip()
+                
+                # Kiểm tra plan_code đã được SYSTEM LOAD_THE_PROGRAM trong ngày chưa
+                cursor.execute('''
+                    SELECT *
+                    FROM history 
+                    WHERE operator_code = 'SYSTEM'
+                    AND plan_code = ?
+                    AND DATE(timestamp) = ?
+                    LIMIT 1
+                ''', (plan_code, current_date))
+                
+                result = cursor.fetchone()
+                
+                if result:
+                    # Plan code đã được SYSTEM load trong ngày -> không thêm
+                    invalid_data.append((ext_code, plan_code))
+                    print(f"⚠️ PlanCode '{plan_code}' (ExtCode: {ext_code}) đã được SYSTEM LOAD trong ngày - KHÔNG IMPORT")
+                else:
+                    # Plan code chưa được load -> được thêm
+                    valid_data.append((ext_code, plan_code))
+                    print(f"✅ PlanCode '{plan_code}' (ExtCode: {ext_code}) chưa được load - SẼ IMPORT")
+            
+            # Nếu có dữ liệu không hợp lệ, hiển thị cảnh báo
+            if invalid_data:
+                warning_msg = f"🚫 Có {len(invalid_data)} dòng KHÔNG được import do plan_code đã được SYSTEM LOAD trong ngày:\n\n"
+                for ext_code, plan_code in invalid_data[:10]:
+                    warning_msg += f"  - {plan_code} (ExtCode: {ext_code})\n"
+                if len(invalid_data) > 10:
+                    warning_msg += f"  ... và {len(invalid_data) - 10} dòng khác"
+                warning_msg += f"\n\n⚠️ Các dòng này sẽ bị BỎ QUA, không thêm vào kế hoạch!"
+                
+                QtWidgets.QMessageBox.warning(self, "Cảnh báo - Plan code đã được load", warning_msg)
+            
+            if not valid_data:
+                QtWidgets.QMessageBox.warning(
+                    self, 
+                    "Cảnh báo", 
+                    f"❌ Tất cả {len(data_list)} dòng trong file đều có plan_code đã được SYSTEM LOAD trong ngày hôm nay!\n\nKhông có dữ liệu mới để import."
+                )
+                return
+            
+            # Xác nhận import
+            # Nhóm theo plan_code để hiển thị
+            plan_groups_preview = {}
+            for ext_code, plan_code in valid_data:
+                if plan_code not in plan_groups_preview:
+                    plan_groups_preview[plan_code] = []
+                plan_groups_preview[plan_code].append(ext_code)
+            
+            plan_summary = "\n".join([f"  - {plan_code}: {len(ext_codes)} mã" 
+                                    for plan_code, ext_codes in plan_groups_preview.items()])
+            
+            reply = QtWidgets.QMessageBox.question(
+                self, 
+                "Xác nhận Import", 
+                f"⚠️ CẢNH BÁO: Toàn bộ dữ liệu cũ trong bảng PLAN sẽ bị XÓA!\n\n"
+                f"📊 Tổng số dòng trong file: {len(data_list)}\n"
+                f"✅ Số dòng hợp lệ (plan_code chưa load, sẽ import): {len(valid_data)}\n"
+                f"❌ Số dòng bị loại (plan_code đã load, không import): {len(invalid_data)}\n\n"
+                f"📋 Chi tiết các plan_code sẽ được import:\n{plan_summary}\n\n"
+                f"📝 Danh sách chi tiết (10 dòng đầu):\n"
+                f"{chr(10).join([f'  - {ext} (Plan: {plan})' for ext, plan in valid_data[:10]])}"
+                f"{'...' if len(valid_data) > 10 else ''}\n\n"
+                f"⚠️ Các plan_code đã load sẽ bị BỎ QUA!\n\n"
+                f"Bạn có chắc chắn muốn import dữ liệu mới không?",
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                QtWidgets.QMessageBox.No
+            )
+            
+            if reply != QtWidgets.QMessageBox.Yes:
+                return
             
             # Bắt đầu transaction
             cursor.execute('BEGIN TRANSACTION')
             
-            # Xóa hết dữ liệu cũ trong bảng plan
+            # 1. Xóa hết dữ liệu cũ trong bảng plan
             cursor.execute('DELETE FROM plan')
             deleted_count = cursor.rowcount
-            print(f"Đã xóa {deleted_count} dòng dữ liệu cũ trong bảng plan")
+            print(f"🗑️ Đã xóa {deleted_count} dòng dữ liệu cũ trong bảng plan")
             
             # Ghi vào history hành động xóa
             cursor.execute('''
-                INSERT INTO history (ext_code, operator_code, action, timestamp)
-                VALUES (?, ?, ?, ?)
-            ''', ('ALL', self.validated_operator, 'CLEAR_PLAN_TABLE', datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                INSERT INTO history (ext_code, operator_code, action, plan_code, timestamp)
+                VALUES (?, ?, ?, ?, ?)
+            ''', ('ALL', self.validated_operator, 'CLEAR_ALL_PLAN_TABLE', 'ALL', 
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
             
-            # Import dữ liệu mới với sort_order
-            for idx, ext_code in enumerate(ext_codes):
+            # 2. Import dữ liệu mới theo thứ tự trong file (CHỈ import các dòng hợp lệ - plan_code chưa load)
+            success_count = 0
+            error_count = 0
+            
+            for idx, (ext_code, plan_code) in enumerate(valid_data):
                 try:
-                    # Thêm mới vào bảng plan với sort_order
-                    cursor.execute('INSERT INTO plan (ext_code, sort_order) VALUES (?, ?)', (ext_code, idx))
+                    # Thêm mới vào bảng plan với sort_order theo thứ tự file
+                    cursor.execute(
+                        'INSERT INTO plan (ext_code, sort_order, plan_code) VALUES (?, ?, ?)', 
+                        (ext_code, idx, plan_code)
+                    )
                     success_count += 1
+                    print(f"✅ Import thành công: {ext_code} (Plan: {plan_code}) - sort_order: {idx}")
                     
                     # Ghi vào bảng history cho từng mã
                     cursor.execute('''
-                        INSERT INTO history (ext_code, operator_code, action, timestamp)
-                        VALUES (?, ?, ?, ?)
-                    ''', (ext_code, self.validated_operator, f'IMPORT_PLAN_SORT_ORDER_{idx}', datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                        INSERT INTO history (ext_code, operator_code, action, plan_code, timestamp)
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (ext_code, self.validated_operator, f'IMPORT_PLAN_SORT_ORDER_{idx}', plan_code, 
+                        datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
                     
                 except sqlite3.Error as e:
                     error_count += 1
-                    print(f"Lỗi khi import ExtCode '{ext_code}': {str(e)}")
+                    print(f"❌ Lỗi khi import ExtCode '{ext_code}' cho plan '{plan_code}': {str(e)}")
                     continue
             
             # Commit transaction
             conn.commit()
             
+            # Nhóm kết quả theo plan_code để hiển thị
+            result_plan_groups = {}
+            for ext_code, plan_code in valid_data:
+                if plan_code not in result_plan_groups:
+                    result_plan_groups[plan_code] = 0
+                result_plan_groups[plan_code] += 1
+            
+            plan_result_summary = "\n".join([f"  - {plan_code}: {count} mã" 
+                                            for plan_code, count in result_plan_groups.items()])
+            
             # Hiển thị kết quả
-            result_message = f"Kết quả import:\n\n"
-            result_message += f"🗑️ Đã xóa dữ liệu cũ: {deleted_count}\n"
-            result_message += f"✅ Import thành công: {success_count}\n"
+            result_message = f"📊 KẾT QUẢ IMPORT:\n\n"
+            result_message += f"🗑️ Đã xóa dữ liệu cũ: {deleted_count} dòng\n"
+            result_message += f"📊 Tổng số dòng trong file: {len(data_list)}\n"
+            result_message += f"✅ IMPORT THÀNH CÔNG: {success_count} dòng\n"
             result_message += f"❌ Lỗi: {error_count}\n"
-            result_message += f"📊 Tổng số mã mới: {len(ext_codes)}\n"
-            result_message += f"🎯 Đã thêm sort_order từ 0 đến {len(ext_codes)-1}"
+            result_message += f"🚫 BỊ LOẠI (plan_code đã load trong ngày): {len(invalid_data)} dòng\n\n"
+            result_message += f"📋 Chi tiết theo plan_code (đã import):\n{plan_result_summary}\n"
+            result_message += f"🎯 Sort_order được đánh theo thứ tự trong file (0 đến {success_count-1 if success_count > 0 else 0})"
             
             QtWidgets.QMessageBox.information(self, "Kết quả Import", result_message)
             
-            # Nếu có dữ liệu được import thành công, đóng cửa sổ
+            # Nếu có dữ liệu được import thành công, phát signal và đóng cửa sổ
             if success_count > 0:
                 self.plan_imported.emit()
                 self.close()
-                        
+                                
         except sqlite3.Error as e:
             if conn:
                 conn.rollback()
@@ -340,7 +450,6 @@ class ImportPlanWindow(QtWidgets.QWidget):
         finally:
             if conn:
                 conn.close()
-
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)

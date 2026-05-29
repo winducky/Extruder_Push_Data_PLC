@@ -43,8 +43,9 @@ CREATE TABLE IF NOT EXISTS operator (
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS plan (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ext_code TEXT UNIQUE,
-    sort_order INTEGER DEFAULT 0
+    ext_code TEXT,
+    sort_order INTEGER DEFAULT 0,
+    plan_code TEXT
 )
 ''')
 
@@ -55,6 +56,7 @@ CREATE TABLE IF NOT EXISTS history (
     ext_code TEXT,
     operator_code TEXT,
     action TEXT,
+    plan_code TEXT,
     timestamp TEXT DEFAULT CURRENT_TIMESTAMP
 )
 ''')

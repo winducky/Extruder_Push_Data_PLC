@@ -714,37 +714,6 @@ class Ui_MainWindow(object):
         print("Plan đã thay đổi, đang reload dữ liệu...")
         self.load_first_plan()
     
-    def load_first_plan(self):
-        """Load item đầu tiên (sort_order bé nhất) từ bảng plan"""
-        conn = None
-        try:
-            conn = sqlite3.connect('extruder.sqlite')
-            cursor = conn.cursor()
-            
-            # Lấy ext_code đầu tiên theo sort_order
-            cursor.execute('''
-                SELECT ext_code FROM plan 
-                ORDER BY sort_order, id 
-                LIMIT 1
-            ''')
-            result = cursor.fetchone()
-            
-            if result:
-                ext_code = result[0]
-                self.ExtCode.setText(ext_code)
-                # Load spec data
-                self.load_spec_data(ext_code)
-            else:
-                # Không có dữ liệu trong plan
-                self.ExtCode.setText("")
-                self.clear_all_fields()
-                
-        except sqlite3.Error as e:
-            print(f"Lỗi database: {str(e)}")
-        finally:
-            if conn:
-                conn.close()
-
     # Hàm tiện ích để format số, nếu là float mà có phần thập phân là .0 thì chỉ hiển thị phần nguyên
     def format_number(self, value):
         if value is None:
@@ -821,6 +790,48 @@ class Ui_MainWindow(object):
         self.ConveyorCoolingBelt.clear()
         self.TUCRoller.clear()
     
+    def load_first_plan(self):
+        """Load item đầu tiên (sort_order bé nhất) từ bảng plan"""
+        conn = None
+        try:
+            conn = sqlite3.connect('extruder.sqlite')
+            cursor = conn.cursor()
+            
+            # Lấy ext_code, id, sort_order và plan_code của item đầu tiên
+            cursor.execute('''
+                SELECT ext_code, id, sort_order, plan_code FROM plan 
+                ORDER BY sort_order, id 
+                LIMIT 1
+            ''')
+            result = cursor.fetchone()
+            
+            if result:
+                ext_code, plan_id, sort_order, plan_code = result
+                self.ExtCode.setText(ext_code)
+                # Lưu lại plan_id, sort_order và plan_code để xóa sau
+                self.current_plan_id = plan_id
+                self.current_sort_order = sort_order
+                self.current_plan_code = plan_code  # Lưu plan_code
+                # Load spec data
+                self.load_spec_data(ext_code)
+                
+                # Hiển thị plan_code lên title hoặc status bar (nếu có)
+                print(f"Đang load: ExtCode={ext_code}, PlanCode={plan_code}, SortOrder={sort_order}")
+            else:
+                # Không có dữ liệu trong plan
+                self.ExtCode.setText("")
+                self.clear_all_fields()
+                self.current_plan_id = None
+                self.current_sort_order = None
+                self.current_plan_code = None  # Reset plan_code
+                print("Không có dữ liệu kế hoạch")
+                
+        except sqlite3.Error as e:
+            print(f"Lỗi database: {str(e)}")
+        finally:
+            if conn:
+                conn.close()
+
     def load_to_plc(self):
         """Xử lý khi nhấn nút LoadDataToPLC"""
         current_ext_code = self.ExtCode.text().strip()
@@ -829,11 +840,23 @@ class Ui_MainWindow(object):
             QtWidgets.QMessageBox.warning(None, "Cảnh báo", "Không có mã kế hoạch để load!")
             return
         
+        if not hasattr(self, 'current_plan_id') or self.current_plan_id is None:
+            QtWidgets.QMessageBox.warning(None, "Cảnh báo", "Không tìm thấy ID kế hoạch!")
+            return
+        
+        # Lấy plan_code hiện tại
+        current_plan_code = getattr(self, 'current_plan_code', None)
+        
         # Xác nhận load
+        confirm_msg = f"Bạn có chắc chắn muốn load chương trình cho mã:\n{current_ext_code}\n"
+        confirm_msg += f"ID: {self.current_plan_id} | Sort Order: {self.current_sort_order}"
+        if current_plan_code:
+            confirm_msg += f" | Plan Code: {current_plan_code}"
+        
         reply = QtWidgets.QMessageBox.question(
             None,
             "Xác nhận",
-            f"Bạn có chắc chắn muốn load chương trình cho mã:\n{current_ext_code}?",
+            confirm_msg,
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
             QtWidgets.QMessageBox.No
         )
@@ -849,24 +872,33 @@ class Ui_MainWindow(object):
             # Bắt đầu transaction
             cursor.execute('BEGIN TRANSACTION')
             
-            # Xóa item hiện tại khỏi bảng plan
-            cursor.execute('DELETE FROM plan WHERE ext_code = ?', (current_ext_code,))
+            # Xóa item hiện tại bằng ID (chính xác tuyệt đối)
+            cursor.execute('DELETE FROM plan WHERE id = ?', (self.current_plan_id,))
+            deleted_count = cursor.rowcount
+            print(f"Đã xóa {deleted_count} dòng: ID={self.current_plan_id}, ExtCode={current_ext_code}, PlanCode={current_plan_code}")
             
-            # Ghi vào history
+            # Ghi vào history với plan_code
             cursor.execute('''
-                INSERT INTO history (ext_code, operator_code, action, timestamp)
-                VALUES (?, ?, ?, ?)
-            ''', (current_ext_code, 'SYSTEM', 'LOAD_THE_PROGRAM', datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                INSERT INTO history (ext_code, operator_code, action, plan_code, timestamp)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (current_ext_code, 'SYSTEM', 
+                f'LOAD_THE_PROGRAM_ID_{self.current_plan_id}_SORT_ORDER_{self.current_sort_order}', 
+                current_plan_code,
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
             
             # Commit transaction
             conn.commit()
             
             # Hiển thị thông báo thành công
-            # QtWidgets.QMessageBox.information(
-            #     None,
-            #     "Thành công",
-            #     f"Đã load chương trình cho mã:\n{current_ext_code}\n\nĐã xóa khỏi danh sách kế hoạch!"
-            # )
+            success_msg = f"Đã load chương trình cho mã:\n{current_ext_code}\n\nĐã xóa khỏi danh sách kế hoạch!"
+            if current_plan_code:
+                success_msg += f"\nPlan Code: {current_plan_code}"
+            
+            QtWidgets.QMessageBox.information(
+                None,
+                "Thành công",
+                success_msg
+            )
             
             # Load item tiếp theo
             self.load_first_plan()
