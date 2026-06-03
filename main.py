@@ -1,4 +1,4 @@
-import sys
+import sys, os
 import sqlite3
 from PyQt5 import QtCore, QtGui, QtWidgets
 import warnings
@@ -6,6 +6,14 @@ from datetime import datetime
 
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 
+def get_resource_path(relative_path):
+    """Lấy đường dẫn tuyệt đối đến resource (icon, image, etc.)"""
+    if getattr(sys, 'frozen', False):  
+        base_path = os.path.dirname(sys.executable)  # Lấy thư mục chứa file .exe
+    else:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+
+    return os.path.join(base_path, relative_path)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -334,7 +342,8 @@ class Ui_MainWindow(object):
 "    background-color: #0b5ed7;\n"
 "}")
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("D:\\App\\Production\\Extruder3\\Application\\images/cabinet.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
+        icon_load_data_plc_path = get_resource_path("images/cabinet.png")
+        icon.addPixmap(QtGui.QPixmap(icon_load_data_plc_path), QtGui.QIcon.Normal, QtGui.QIcon.On)
         self.LoadDataToPLC.setIcon(icon)
         self.LoadDataToPLC.setIconSize(QtCore.QSize(32, 32))
         self.LoadDataToPLC.setObjectName("LoadDataToPLC")
@@ -386,7 +395,8 @@ class Ui_MainWindow(object):
 "    background-color: #b02a37;\n"
 "}")
         icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap("D:\\App\\Production\\Extruder3\\Application\\images/cross.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
+        icon_close_path = get_resource_path("images/cross.png")
+        icon1.addPixmap(QtGui.QPixmap(icon_close_path), QtGui.QIcon.Normal, QtGui.QIcon.On)
         self.CloseApp.setIcon(icon1)
         self.CloseApp.setIconSize(QtCore.QSize(32, 32))
         self.CloseApp.setObjectName("CloseApp")
@@ -418,7 +428,8 @@ class Ui_MainWindow(object):
 "    background-color: #146c43;\n"
 "}")
         icon2 = QtGui.QIcon()
-        icon2.addPixmap(QtGui.QPixmap("D:\\App\\Production\\Extruder3\\Application\\images/import.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
+        icon_import_path = get_resource_path("images/import.png")
+        icon2.addPixmap(QtGui.QPixmap(icon_import_path), QtGui.QIcon.Normal, QtGui.QIcon.On)
         self.ImportPlan.setIcon(icon2)
         self.ImportPlan.setIconSize(QtCore.QSize(32, 32))
         self.ImportPlan.setObjectName("ImportPlan")
@@ -449,8 +460,8 @@ class Ui_MainWindow(object):
 "    background-color: #d39e00;\n"
 "}")
         icon3 = QtGui.QIcon()
-        icon3.addPixmap(QtGui.QPixmap("D:\\App\\Production\\Extruder3\\Application\\images/video-editing.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
-        icon3.addPixmap(QtGui.QPixmap("C:/Users/dan.it/.designer/backup/images/video-editing.png"), QtGui.QIcon.Disabled, QtGui.QIcon.Off)
+        icon_change_plan_path = get_resource_path("images/video-editing.png")
+        icon3.addPixmap(QtGui.QPixmap(icon_change_plan_path), QtGui.QIcon.Normal, QtGui.QIcon.On)
         self.ChangePlan.setIcon(icon3)
         self.ChangePlan.setIconSize(QtCore.QSize(32, 32))
         self.ChangePlan.setObjectName("ChangePlan")
@@ -680,9 +691,9 @@ class Ui_MainWindow(object):
     def open_import_plan(self):
         from ImportPlan import ImportPlanWindow
         self.import_plan_window = ImportPlanWindow()
+        # Kết nối signal để reload dữ liệu khi import xong
+        self.import_plan_window.plan_imported.connect(self.on_plan_changed)
         self.import_plan_window.show()
-        # Kết nối sự kiện khi import xong để refresh
-        self.import_plan_window.destroyed.connect(self.load_first_plan)
 
     def open_change_plan(self):
         from ChangePlan import ChangePlanWindow
@@ -696,37 +707,14 @@ class Ui_MainWindow(object):
         print("Plan đã thay đổi, đang reload dữ liệu...")
         self.load_first_plan()
     
-    def load_first_plan(self):
-        """Load item đầu tiên (sort_order bé nhất) từ bảng plan"""
-        conn = None
-        try:
-            conn = sqlite3.connect('extruder.sqlite')
-            cursor = conn.cursor()
-            
-            # Lấy ext_code đầu tiên theo sort_order
-            cursor.execute('''
-                SELECT ext_code FROM plan 
-                ORDER BY sort_order, id 
-                LIMIT 1
-            ''')
-            result = cursor.fetchone()
-            
-            if result:
-                ext_code = result[0]
-                self.ExtCode.setText(ext_code)
-                # Load spec data
-                self.load_spec_data(ext_code)
-            else:
-                # Không có dữ liệu trong plan
-                self.ExtCode.setText("")
-                self.clear_all_fields()
-                
-        except sqlite3.Error as e:
-            print(f"Lỗi database: {str(e)}")
-        finally:
-            if conn:
-                conn.close()
-    
+    # Hàm tiện ích để format số, nếu là float mà có phần thập phân là .0 thì chỉ hiển thị phần nguyên
+    def format_number(self, value):
+        if value is None:
+            return ""
+        if isinstance(value, float) and value.is_integer():
+            return str(int(value))
+        return str(value)
+    # Hàm để load dữ liệu spec theo ext_code
     def load_spec_data(self, ext_code):
         """Load dữ liệu từ bảng spec theo ext_code"""
         conn = None
@@ -752,18 +740,18 @@ class Ui_MainWindow(object):
                 
                 # Gán dữ liệu vào các trường
                 self.TireName.setText(str(tire_name) if tire_name else "")
-                self.Length.setText(str(length) if length else "")
-                self.Height.setText(str(height) if height else "")
-                self.Weight.setText(str(weight) if weight else "")
-                self.UpperScrew.setText(str(upper_screw) if upper_screw else "")
-                self.LowerScrew.setText(str(lower_screw) if lower_screw else "")
-                self.RollSpeed.setText(str(roll_speed) if roll_speed else "")
-                self.TUCSpeed.setText(str(tuc_speed) if tuc_speed else "")
-                self.ConveyoRoller.setText(str(conveyor_roller) if conveyor_roller else "")
-                self.ConveyorSlope.setText(str(conveyor_slope) if conveyor_slope else "")
-                self.ConveyorRollerBelts.setText(str(roller_belt) if roller_belt else "")
-                self.ConveyorCoolingBelt.setText(str(cooling_belt) if cooling_belt else "")
-                self.TUCRoller.setText(str(tuc_roller) if tuc_roller else "")
+                self.Length.setText(self.format_number(length))
+                self.Height.setText(self.format_number(height))
+                self.Weight.setText(self.format_number(weight))
+                self.UpperScrew.setText(self.format_number(upper_screw))
+                self.LowerScrew.setText(self.format_number(lower_screw))
+                self.RollSpeed.setText(self.format_number(roll_speed))
+                self.TUCSpeed.setText(self.format_number(tuc_speed))
+                self.ConveyoRoller.setText(self.format_number(conveyor_roller))
+                self.ConveyorSlope.setText(self.format_number(conveyor_slope))
+                self.ConveyorRollerBelts.setText(self.format_number(roller_belt))
+                self.ConveyorCoolingBelt.setText(self.format_number(cooling_belt))
+                self.TUCRoller.setText(self.format_number(tuc_roller))
             else:
                 # Không tìm thấy spec, clear các field
                 self.clear_all_fields()
@@ -795,6 +783,48 @@ class Ui_MainWindow(object):
         self.ConveyorCoolingBelt.clear()
         self.TUCRoller.clear()
     
+    def load_first_plan(self):
+        """Load item đầu tiên (sort_order bé nhất) từ bảng plan"""
+        conn = None
+        try:
+            conn = sqlite3.connect('extruder.sqlite')
+            cursor = conn.cursor()
+            
+            # Lấy ext_code, id, sort_order và plan_code của item đầu tiên
+            cursor.execute('''
+                SELECT ext_code, id, sort_order, plan_code FROM plan 
+                ORDER BY sort_order, id 
+                LIMIT 1
+            ''')
+            result = cursor.fetchone()
+            
+            if result:
+                ext_code, plan_id, sort_order, plan_code = result
+                self.ExtCode.setText(ext_code)
+                # Lưu lại plan_id, sort_order và plan_code để xóa sau
+                self.current_plan_id = plan_id
+                self.current_sort_order = sort_order
+                self.current_plan_code = plan_code  # Lưu plan_code
+                # Load spec data
+                self.load_spec_data(ext_code)
+                
+                # Hiển thị plan_code lên title hoặc status bar (nếu có)
+                print(f"Đang load: ExtCode={ext_code}, PlanCode={plan_code}, SortOrder={sort_order}")
+            else:
+                # Không có dữ liệu trong plan
+                self.ExtCode.setText("")
+                self.clear_all_fields()
+                self.current_plan_id = None
+                self.current_sort_order = None
+                self.current_plan_code = None  # Reset plan_code
+                print("Không có dữ liệu kế hoạch")
+                
+        except sqlite3.Error as e:
+            print(f"Lỗi database: {str(e)}")
+        finally:
+            if conn:
+                conn.close()
+
     def load_to_plc(self):
         """Xử lý khi nhấn nút LoadDataToPLC"""
         current_ext_code = self.ExtCode.text().strip()
@@ -803,11 +833,23 @@ class Ui_MainWindow(object):
             QtWidgets.QMessageBox.warning(None, "Cảnh báo", "Không có mã kế hoạch để load!")
             return
         
+        if not hasattr(self, 'current_plan_id') or self.current_plan_id is None:
+            QtWidgets.QMessageBox.warning(None, "Cảnh báo", "Không tìm thấy ID kế hoạch!")
+            return
+        
+        # Lấy plan_code hiện tại
+        current_plan_code = getattr(self, 'current_plan_code', None)
+        
         # Xác nhận load
+        confirm_msg = f"Bạn có chắc chắn muốn load chương trình cho mã:\n{current_ext_code}\n"
+        confirm_msg += f"ID: {self.current_plan_id} | Sort Order: {self.current_sort_order}"
+        if current_plan_code:
+            confirm_msg += f" | Plan Code: {current_plan_code}"
+        
         reply = QtWidgets.QMessageBox.question(
             None,
             "Xác nhận",
-            f"Bạn có chắc chắn muốn load chương trình cho mã:\n{current_ext_code}?",
+            confirm_msg,
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
             QtWidgets.QMessageBox.No
         )
@@ -823,24 +865,33 @@ class Ui_MainWindow(object):
             # Bắt đầu transaction
             cursor.execute('BEGIN TRANSACTION')
             
-            # Xóa item hiện tại khỏi bảng plan
-            cursor.execute('DELETE FROM plan WHERE ext_code = ?', (current_ext_code,))
+            # Xóa item hiện tại bằng ID (chính xác tuyệt đối)
+            cursor.execute('DELETE FROM plan WHERE id = ?', (self.current_plan_id,))
+            deleted_count = cursor.rowcount
+            print(f"Đã xóa {deleted_count} dòng: ID={self.current_plan_id}, ExtCode={current_ext_code}, PlanCode={current_plan_code}")
             
-            # Ghi vào history
+            # Ghi vào history với plan_code
             cursor.execute('''
-                INSERT INTO history (ext_code, operator_code, action, timestamp)
-                VALUES (?, ?, ?, ?)
-            ''', (current_ext_code, 'SYSTEM', 'LOAD_THE_PROGRAM', datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                INSERT INTO history (ext_code, operator_code, action, plan_code, timestamp)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (current_ext_code, 'SYSTEM', 
+                f'LOAD_THE_PROGRAM_ID_{self.current_plan_id}_SORT_ORDER_{self.current_sort_order}', 
+                current_plan_code,
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
             
             # Commit transaction
             conn.commit()
             
             # Hiển thị thông báo thành công
-        #     QtWidgets.QMessageBox.information(
-        #         None,
-        #         "Thành công",
-        #         f"Đã load chương trình cho mã:\n{current_ext_code}\n\nĐã xóa khỏi danh sách kế hoạch!"
-        #     )
+            success_msg = f"Đã load chương trình cho mã:\n{current_ext_code}\n\nĐã xóa khỏi danh sách kế hoạch!"
+            if current_plan_code:
+                success_msg += f"\nPlan Code: {current_plan_code}"
+            
+            QtWidgets.QMessageBox.information(
+                None,
+                "Thành công",
+                success_msg
+            )
             
             # Load item tiếp theo
             self.load_first_plan()

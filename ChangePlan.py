@@ -98,16 +98,22 @@ class ListItemWidget(QWidget):
         )
         
         if reply == QtWidgets.QMessageBox.Yes:
-            # Tìm và xóa item trong listWidget
+            # Xóa trong view
             for i in range(self.parent_list.count()):
                 item = self.parent_list.item(i)
-                if item and item.data(QtCore.Qt.UserRole) == self:
+                widget = self.parent_list.itemWidget(item)
+                if widget == self:
                     self.parent_list.takeItem(i)
+                    print(f"Đã xóa item tại index {i}")
                     break
             
-            # Cập nhật lại thứ tự sau khi xóa
-            if hasattr(self.parent_list.parent(), 'update_order_after_delete'):
-                self.parent_list.parent().update_order_after_delete()
+            # Gọi hàm cập nhật (sẽ xóa trong database và cập nhật lại sort_order)
+            parent_window = self.parent_list.parent()
+            if hasattr(parent_window, 'update_order_after_delete'):
+                # Truyền thông tin item đã xóa
+                parent_window.update_order_after_delete(self.ext_code, self.plan_code)
+            else:
+                print("Warning: update_order_after_delete not found")
 
 class Ui_ChangePlan(object):
     def setupUi(self, ChangePlan):
@@ -373,6 +379,120 @@ class ChangePlanWindow(QtWidgets.QWidget):
             if conn:
                 conn.close()
 
+    def update_order_after_delete(self, deleted_ext_code=None, deleted_plan_code=None):
+        """Cập nhật sau khi xóa item"""
+        
+        # Nếu có thông tin item đã xóa, xóa khỏi database
+        if deleted_ext_code and deleted_plan_code:
+            conn = None
+            try:
+                conn = sqlite3.connect('extruder.sqlite')
+                cursor = conn.cursor()
+                
+                # Xóa item khỏi database
+                cursor.execute('''
+                    DELETE FROM plan 
+                    WHERE ext_code = ? AND plan_code = ?
+                ''', (deleted_ext_code, deleted_plan_code))
+                
+                print(f"Đã xóa trong database: {deleted_ext_code} - {deleted_plan_code}")
+                
+                # Ghi vào history
+                cursor.execute('''
+                    INSERT INTO history (ext_code, operator_code, action, plan_code, timestamp)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (deleted_ext_code, self.validated_operator, 
+                    'DELETE_FROM_PLAN', deleted_plan_code,
+                    datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                
+                conn.commit()
+                
+            except sqlite3.Error as e:
+                if conn:
+                    conn.rollback()
+                QtWidgets.QMessageBox.critical(self, "Lỗi Database", f"Lỗi khi xóa trong database:\n{str(e)}")
+                return
+            finally:
+                if conn:
+                    conn.close()
+        
+        # Lấy thứ tự hiện tại từ listWidget
+        current_order = self.get_current_order()
+        
+        if not current_order:
+            # Nếu không còn item nào, hỏi có muốn đóng cửa sổ không
+            reply = QtWidgets.QMessageBox.question(
+                self,
+                "Thông báo",
+                "Danh sách kế hoạch đã trống.\nBạn có muốn đóng cửa sổ này không?",
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                QtWidgets.QMessageBox.Yes
+            )
+            if reply == QtWidgets.QMessageBox.Yes:
+                self.close()
+            else:
+                # Nếu không đóng, cập nhật original_order rỗng
+                self.original_order = []
+                self.setWindowTitle(f"Change Plan - Tổng số: 0 mã")
+            return
+        
+        # Cập nhật lại sort_order trong database cho các item còn lại
+        conn = None
+        try:
+            conn = sqlite3.connect('extruder.sqlite')
+            cursor = conn.cursor()
+            
+            cursor.execute('BEGIN TRANSACTION')
+            
+            # Cập nhật sort_order mới cho các item còn lại
+            for idx, item in enumerate(current_order):
+                cursor.execute('''
+                    UPDATE plan 
+                    SET sort_order = ? 
+                    WHERE ext_code = ? AND plan_code = ?
+                ''', (idx, item['ext_code'], item['plan_code']))
+                
+                # Ghi vào history
+                cursor.execute('''
+                    INSERT INTO history (ext_code, operator_code, action, plan_code, timestamp)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (item['ext_code'], self.validated_operator, f'REORDER_AFTER_DELETE_TO_{idx}', 
+                    item['plan_code'], datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            
+            conn.commit()
+            
+            # Cập nhật original_order
+            self.original_order = current_order.copy()
+            
+            # Cập nhật title
+            self.setWindowTitle(f"Change Plan - Tổng số: {len(current_order)} mã")
+            
+            # Nhóm theo plan_code để hiển thị
+            plan_groups = {}
+            for item in current_order:
+                plan_code = item['plan_code']
+                if plan_code not in plan_groups:
+                    plan_groups[plan_code] = 0
+                plan_groups[plan_code] += 1
+            
+            plan_summary = "\n".join([f"  - {plan_code}: {count} mã" for plan_code, count in plan_groups.items()])
+            
+            # QtWidgets.QMessageBox.information(
+            #     self,
+            #     "Thành công",
+            #     f"Đã xóa item khỏi danh sách và cập nhật lại thứ tự!\n\n"
+            #     f"Số lượng còn lại: {len(current_order)} mã.\n"
+            #     f"Chi tiết theo plan_code:\n{plan_summary}"
+            # )
+            
+        except sqlite3.Error as e:
+            if conn:
+                conn.rollback()
+            QtWidgets.QMessageBox.critical(self, "Lỗi Database", f"Lỗi khi cập nhật thứ tự:\n{str(e)}")
+        finally:
+            if conn:
+                conn.close()
+                
     def save_plan_order(self):
         """Lưu thứ tự mới của plan vào database (chỉ update sort_order, giữ nguyên plan_code)"""
         
@@ -445,13 +565,13 @@ class ChangePlanWindow(QtWidgets.QWidget):
             
             plan_summary = "\n".join([f"  - {plan_code}: {count} mã" for plan_code, count in plan_groups.items()])
             
-            QtWidgets.QMessageBox.information(
-                self,
-                "Thành công",
-                f"Đã lưu thứ tự kế hoạch mới!\n\n"
-                f"Tổng số: {updated_count}/{len(current_order)} mã.\n"
-                f"Chi tiết theo plan_code:\n{plan_summary}"
-            )
+            # QtWidgets.QMessageBox.information(
+            #     self,
+            #     "Thành công",
+            #     f"Đã lưu thứ tự kế hoạch mới!\n\n"
+            #     f"Tổng số: {updated_count}/{len(current_order)} mã.\n"
+            #     f"Chi tiết theo plan_code:\n{plan_summary}"
+            # )
             
             # Phát signal thông báo đã thay đổi
             self.plan_changed.emit()

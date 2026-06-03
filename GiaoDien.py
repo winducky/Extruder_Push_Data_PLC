@@ -8,13 +8,6 @@ warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 def get_resource_path(relative_path):
     """Lấy đường dẫn tuyệt đối đến resource (icon, image, etc.)"""
-    # try:
-    #     # PyInstaller tạo biến _MEIPASS khi đóng gói
-    #     base_path = sys._MEIPASS
-    # except Exception:
-    #     # Chạy trong môi trường development
-    #     base_path = os.path.abspath(".")
-
     if getattr(sys, 'frozen', False):  
         base_path = os.path.dirname(sys.executable)  # Lấy thư mục chứa file .exe
     else:
@@ -24,7 +17,6 @@ def get_resource_path(relative_path):
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
-        # ... (giữ nguyên phần UI như bạn đã có)
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1920, 1080)
         MainWindow.setMinimumSize(QtCore.QSize(1920, 1080))
@@ -33,7 +25,7 @@ class Ui_MainWindow(object):
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.groupBox = QtWidgets.QGroupBox(self.centralwidget)
-        self.groupBox.setGeometry(QtCore.QRect(10, 520, 1901, 141))
+        self.groupBox.setGeometry(QtCore.QRect(10, 530, 1901, 141))
         self.groupBox.setObjectName("groupBox")
         self.widget = QtWidgets.QWidget(self.groupBox)
         self.widget.setGeometry(QtCore.QRect(30, 40, 581, 71))
@@ -48,10 +40,11 @@ class Ui_MainWindow(object):
         self.label_4.setObjectName("label_4")
         self.Length = QtWidgets.QLineEdit(self.widget)
         self.Length.setGeometry(QtCore.QRect(120, 10, 321, 61))
-        self.Length.setAutoFillBackground(False)
-        self.Length.setReadOnly(True)
+        font = QtGui.QFont()
         font.setPointSize(18)
         self.Length.setFont(font)
+        self.Length.setAutoFillBackground(False)
+        self.Length.setReadOnly(True)
         self.Length.setObjectName("Length")
         self.label_11 = QtWidgets.QLabel(self.widget)
         self.label_11.setGeometry(QtCore.QRect(460, 10, 81, 51))
@@ -73,10 +66,11 @@ class Ui_MainWindow(object):
         self.label_13.setObjectName("label_13")
         self.Height = QtWidgets.QLineEdit(self.widget_2)
         self.Height.setGeometry(QtCore.QRect(150, 10, 321, 61))
-        self.Height.setAutoFillBackground(False)
-        self.Height.setReadOnly(True)
+        font = QtGui.QFont()
         font.setPointSize(18)
         self.Height.setFont(font)
+        self.Height.setAutoFillBackground(False)
+        self.Height.setReadOnly(True)
         self.Height.setObjectName("Height")
         self.label_12 = QtWidgets.QLabel(self.widget_2)
         self.label_12.setGeometry(QtCore.QRect(480, 10, 81, 51))
@@ -98,10 +92,11 @@ class Ui_MainWindow(object):
         self.label_18.setObjectName("label_18")
         self.Weight = QtWidgets.QLineEdit(self.widget_3)
         self.Weight.setGeometry(QtCore.QRect(160, 10, 321, 61))
-        self.Weight.setAutoFillBackground(False)
-        self.Weight.setReadOnly(True)
+        font = QtGui.QFont()
         font.setPointSize(18)
         self.Weight.setFont(font)
+        self.Weight.setAutoFillBackground(False)
+        self.Weight.setReadOnly(True)
         self.Weight.setObjectName("Weight")
         self.label_16 = QtWidgets.QLabel(self.widget_3)
         self.label_16.setGeometry(QtCore.QRect(490, 10, 81, 51))
@@ -111,7 +106,7 @@ class Ui_MainWindow(object):
         self.label_16.setWordWrap(True)
         self.label_16.setObjectName("label_16")
         self.groupBox_2 = QtWidgets.QGroupBox(self.centralwidget)
-        self.groupBox_2.setGeometry(QtCore.QRect(10, 260, 1901, 241))
+        self.groupBox_2.setGeometry(QtCore.QRect(10, 270, 1901, 241))
         self.groupBox_2.setObjectName("groupBox_2")
         self.widget_4 = QtWidgets.QWidget(self.groupBox_2)
         self.widget_4.setGeometry(QtCore.QRect(30, 40, 891, 71))
@@ -126,10 +121,11 @@ class Ui_MainWindow(object):
         self.label_6.setObjectName("label_6")
         self.UpperScrew = QtWidgets.QLineEdit(self.widget_4)
         self.UpperScrew.setGeometry(QtCore.QRect(250, 10, 481, 61))
-        self.UpperScrew.setAutoFillBackground(False)
-        self.UpperScrew.setReadOnly(True)
+        font = QtGui.QFont()
         font.setPointSize(18)
         self.UpperScrew.setFont(font)
+        self.UpperScrew.setAutoFillBackground(False)
+        self.UpperScrew.setReadOnly(True)
         self.UpperScrew.setObjectName("UpperScrew")
         self.label_8 = QtWidgets.QLabel(self.widget_4)
         self.label_8.setGeometry(QtCore.QRect(750, 10, 81, 51))
@@ -151,10 +147,11 @@ class Ui_MainWindow(object):
         self.label_14.setObjectName("label_14")
         self.LowerScrew = QtWidgets.QLineEdit(self.widget_5)
         self.LowerScrew.setGeometry(QtCore.QRect(250, 10, 481, 61))
-        self.LowerScrew.setAutoFillBackground(False)
-        self.LowerScrew.setReadOnly(True)
+        font = QtGui.QFont()
         font.setPointSize(18)
         self.LowerScrew.setFont(font)
+        self.LowerScrew.setAutoFillBackground(False)
+        self.LowerScrew.setReadOnly(True)
         self.LowerScrew.setObjectName("LowerScrew")
         self.label_9 = QtWidgets.QLabel(self.widget_5)
         self.label_9.setGeometry(QtCore.QRect(750, 10, 81, 61))
@@ -176,10 +173,11 @@ class Ui_MainWindow(object):
         self.label_19.setObjectName("label_19")
         self.RollSpeed = QtWidgets.QLineEdit(self.widget_6)
         self.RollSpeed.setGeometry(QtCore.QRect(250, 10, 491, 61))
-        self.RollSpeed.setAutoFillBackground(False)
-        self.RollSpeed.setReadOnly(True)
+        font = QtGui.QFont()
         font.setPointSize(18)
         self.RollSpeed.setFont(font)
+        self.RollSpeed.setAutoFillBackground(False)
+        self.RollSpeed.setReadOnly(True)
         self.RollSpeed.setObjectName("RollSpeed")
         self.label_10 = QtWidgets.QLabel(self.widget_6)
         self.label_10.setGeometry(QtCore.QRect(760, 10, 81, 51))
@@ -201,13 +199,14 @@ class Ui_MainWindow(object):
         self.label_21.setObjectName("label_21")
         self.TUCSpeed = QtWidgets.QLineEdit(self.widget_10)
         self.TUCSpeed.setGeometry(QtCore.QRect(250, 10, 491, 61))
-        self.TUCSpeed.setAutoFillBackground(False)
-        self.TUCSpeed.setReadOnly(True)
+        font = QtGui.QFont()
         font.setPointSize(18)
         self.TUCSpeed.setFont(font)
+        self.TUCSpeed.setAutoFillBackground(False)
+        self.TUCSpeed.setReadOnly(True)
         self.TUCSpeed.setObjectName("TUCSpeed")
         self.groupBox_3 = QtWidgets.QGroupBox(self.centralwidget)
-        self.groupBox_3.setGeometry(QtCore.QRect(10, 680, 1901, 161))
+        self.groupBox_3.setGeometry(QtCore.QRect(10, 690, 1901, 161))
         self.groupBox_3.setObjectName("groupBox_3")
         self.widget_7 = QtWidgets.QWidget(self.groupBox_3)
         self.widget_7.setGeometry(QtCore.QRect(80, 20, 221, 131))
@@ -223,10 +222,11 @@ class Ui_MainWindow(object):
         self.label_7.setObjectName("label_7")
         self.ConveyoRoller = QtWidgets.QLineEdit(self.widget_7)
         self.ConveyoRoller.setGeometry(QtCore.QRect(10, 60, 201, 61))
-        self.ConveyoRoller.setAutoFillBackground(False)
-        self.ConveyoRoller.setReadOnly(True)
+        font = QtGui.QFont()
         font.setPointSize(18)
         self.ConveyoRoller.setFont(font)
+        self.ConveyoRoller.setAutoFillBackground(False)
+        self.ConveyoRoller.setReadOnly(True)
         self.ConveyoRoller.setObjectName("ConveyoRoller")
         self.widget_8 = QtWidgets.QWidget(self.groupBox_3)
         self.widget_8.setGeometry(QtCore.QRect(450, 20, 201, 131))
@@ -241,10 +241,11 @@ class Ui_MainWindow(object):
         self.label_15.setObjectName("label_15")
         self.ConveyorSlope = QtWidgets.QLineEdit(self.widget_8)
         self.ConveyorSlope.setGeometry(QtCore.QRect(10, 60, 181, 61))
-        self.ConveyorSlope.setAutoFillBackground(False)
-        self.ConveyorSlope.setReadOnly(True)
+        font = QtGui.QFont()
         font.setPointSize(18)
         self.ConveyorSlope.setFont(font)
+        self.ConveyorSlope.setAutoFillBackground(False)
+        self.ConveyorSlope.setReadOnly(True)
         self.ConveyorSlope.setObjectName("ConveyorSlope")
         self.widget_9 = QtWidgets.QWidget(self.groupBox_3)
         self.widget_9.setGeometry(QtCore.QRect(790, 20, 271, 131))
@@ -259,10 +260,11 @@ class Ui_MainWindow(object):
         self.label_20.setObjectName("label_20")
         self.ConveyorRollerBelts = QtWidgets.QLineEdit(self.widget_9)
         self.ConveyorRollerBelts.setGeometry(QtCore.QRect(30, 60, 211, 61))
-        self.ConveyorRollerBelts.setAutoFillBackground(False)
-        self.ConveyorRollerBelts.setReadOnly(True)
+        font = QtGui.QFont()
         font.setPointSize(18)
         self.ConveyorRollerBelts.setFont(font)
+        self.ConveyorRollerBelts.setAutoFillBackground(False)
+        self.ConveyorRollerBelts.setReadOnly(True)
         self.ConveyorRollerBelts.setObjectName("ConveyorRollerBelts")
         self.widget_11 = QtWidgets.QWidget(self.groupBox_3)
         self.widget_11.setGeometry(QtCore.QRect(1170, 20, 231, 131))
@@ -277,10 +279,11 @@ class Ui_MainWindow(object):
         self.label_22.setObjectName("label_22")
         self.ConveyorCoolingBelt = QtWidgets.QLineEdit(self.widget_11)
         self.ConveyorCoolingBelt.setGeometry(QtCore.QRect(20, 60, 201, 61))
-        self.ConveyorCoolingBelt.setAutoFillBackground(False)
-        self.ConveyorCoolingBelt.setReadOnly(True)
+        font = QtGui.QFont()
         font.setPointSize(18)
         self.ConveyorCoolingBelt.setFont(font)
+        self.ConveyorCoolingBelt.setAutoFillBackground(False)
+        self.ConveyorCoolingBelt.setReadOnly(True)
         self.ConveyorCoolingBelt.setObjectName("ConveyorCoolingBelt")
         self.widget_13 = QtWidgets.QWidget(self.groupBox_3)
         self.widget_13.setGeometry(QtCore.QRect(1560, 20, 221, 131))
@@ -295,10 +298,11 @@ class Ui_MainWindow(object):
         self.label_26.setObjectName("label_26")
         self.TUCRoller = QtWidgets.QLineEdit(self.widget_13)
         self.TUCRoller.setGeometry(QtCore.QRect(10, 60, 201, 61))
-        self.TUCRoller.setAutoFillBackground(False)
-        self.TUCRoller.setReadOnly(True)
+        font = QtGui.QFont()
         font.setPointSize(18)
         self.TUCRoller.setFont(font)
+        self.TUCRoller.setAutoFillBackground(False)
+        self.TUCRoller.setReadOnly(True)
         self.TUCRoller.setObjectName("TUCRoller")
         self.widget_12 = QtWidgets.QWidget(self.centralwidget)
         self.widget_12.setGeometry(QtCore.QRect(490, 20, 891, 161))
@@ -349,8 +353,7 @@ class Ui_MainWindow(object):
 "    background-color: #0b5ed7;\n"
 "}")
         icon = QtGui.QIcon()
-        icon_load_data_plc_path = get_resource_path("images/cabinet.png")
-        icon.addPixmap(QtGui.QPixmap(icon_load_data_plc_path), QtGui.QIcon.Normal, QtGui.QIcon.On)
+        icon.addPixmap(QtGui.QPixmap("images/cabinet.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
         self.LoadDataToPLC.setIcon(icon)
         self.LoadDataToPLC.setIconSize(QtCore.QSize(32, 32))
         self.LoadDataToPLC.setObjectName("LoadDataToPLC")
@@ -364,10 +367,11 @@ class Ui_MainWindow(object):
         self.label_24.setObjectName("label_24")
         self.TireName = QtWidgets.QLineEdit(self.widget_12)
         self.TireName.setGeometry(QtCore.QRect(140, 100, 481, 61))
-        self.TireName.setAutoFillBackground(False)
-        self.TireName.setReadOnly(True)
+        font = QtGui.QFont()
         font.setPointSize(18)
         self.TireName.setFont(font)
+        self.TireName.setAutoFillBackground(False)
+        self.TireName.setReadOnly(True)
         self.TireName.setObjectName("TireName")
         self.label_23.raise_()
         self.LoadDataToPLC.raise_()
@@ -402,8 +406,7 @@ class Ui_MainWindow(object):
 "    background-color: #b02a37;\n"
 "}")
         icon1 = QtGui.QIcon()
-        icon_close_path = get_resource_path("images/cross.png")
-        icon1.addPixmap(QtGui.QPixmap(icon_close_path), QtGui.QIcon.Normal, QtGui.QIcon.On)
+        icon1.addPixmap(QtGui.QPixmap("images/cross.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
         self.CloseApp.setIcon(icon1)
         self.CloseApp.setIconSize(QtCore.QSize(32, 32))
         self.CloseApp.setObjectName("CloseApp")
@@ -435,8 +438,7 @@ class Ui_MainWindow(object):
 "    background-color: #146c43;\n"
 "}")
         icon2 = QtGui.QIcon()
-        icon_import_path = get_resource_path("images/import.png")
-        icon2.addPixmap(QtGui.QPixmap(icon_import_path), QtGui.QIcon.Normal, QtGui.QIcon.On)
+        icon2.addPixmap(QtGui.QPixmap("images/import.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
         self.ImportPlan.setIcon(icon2)
         self.ImportPlan.setIconSize(QtCore.QSize(32, 32))
         self.ImportPlan.setObjectName("ImportPlan")
@@ -467,11 +469,44 @@ class Ui_MainWindow(object):
 "    background-color: #d39e00;\n"
 "}")
         icon3 = QtGui.QIcon()
-        icon_change_plan_path = get_resource_path("images/video-editing.png")
-        icon3.addPixmap(QtGui.QPixmap(icon_change_plan_path), QtGui.QIcon.Normal, QtGui.QIcon.On)
+        icon3.addPixmap(QtGui.QPixmap("images/video-editing.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
+        icon3.addPixmap(QtGui.QPixmap("C:/Users/dan.it/.designer/backup/images/video-editing.png"), QtGui.QIcon.Disabled, QtGui.QIcon.Off)
         self.ChangePlan.setIcon(icon3)
         self.ChangePlan.setIconSize(QtCore.QSize(32, 32))
         self.ChangePlan.setObjectName("ChangePlan")
+        self.HistoryAndPlan = QtWidgets.QPushButton(self.centralwidget)
+        self.HistoryAndPlan.setGeometry(QtCore.QRect(1680, 220, 231, 51))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        font.setBold(True)
+        font.setWeight(75)
+        self.HistoryAndPlan.setFont(font)
+        self.HistoryAndPlan.setLayoutDirection(QtCore.Qt.LeftToRight)
+        self.HistoryAndPlan.setStyleSheet("QPushButton {\n"
+"    background-color: #6c757d;\n"
+"    color: white;\n"
+"\n"
+"    border: none;\n"
+"    border-radius: 10px;\n"
+"\n"
+"    font-size: 12pt;\n"
+"    font-weight: 600;\n"
+"\n"
+"    padding: 6px 18px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #7c848b;\n"
+"}\n"
+"\n"
+"QPushButton:pressed {\n"
+"    background-color: #5c636a;\n"
+"}")
+        icon4 = QtGui.QIcon()
+        icon4.addPixmap(QtGui.QPixmap("images/project.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
+        self.HistoryAndPlan.setIcon(icon4)
+        self.HistoryAndPlan.setIconSize(QtCore.QSize(32, 32))
+        self.HistoryAndPlan.setObjectName("HistoryAndPlan")
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
@@ -694,7 +729,9 @@ class Ui_MainWindow(object):
 "Import Plan"))
         self.ChangePlan.setText(_translate("MainWindow", "Thay Đổi Kế Hoạch\n"
 "Change Plan"))
-    
+        self.HistoryAndPlan.setText(_translate("MainWindow", "Lịch Sử, Kế Hoạch\n"
+"History, Plan"))
+
     def open_import_plan(self):
         from ImportPlan import ImportPlanWindow
         self.import_plan_window = ImportPlanWindow()
@@ -714,6 +751,11 @@ class Ui_MainWindow(object):
         print("Plan đã thay đổi, đang reload dữ liệu...")
         self.load_first_plan()
     
+    def open_history_and_plan(self):
+        from HistoryAndPlan import Ui_HistoryPlan
+        self.history_and_plan_window = Ui_HistoryPlan()
+        self.history_and_plan_window.show()
+
     # Hàm tiện ích để format số, nếu là float mà có phần thập phân là .0 thì chỉ hiển thị phần nguyên
     def format_number(self, value):
         if value is None:
@@ -731,10 +773,10 @@ class Ui_MainWindow(object):
             
             cursor.execute('''
                 SELECT tire_name, length, height, weight, 
-                       upper_screw_speed, lower_screw_speed, 
-                       roller_speed_1st, roll_tuc_speed,
-                       conveyor_roller, conveyor_slope, 
-                       roller_conveyor_belt, cooling_conveyor_belt, tuc_roller
+                    upper_screw_speed, lower_screw_speed, 
+                    roller_speed_1st, roll_tuc_speed,
+                    conveyor_roller, conveyor_slope, 
+                    roller_conveyor_belt, cooling_conveyor_belt, tuc_roller
                 FROM spec WHERE ext_code = ?
             ''', (ext_code,))
             
@@ -742,8 +784,8 @@ class Ui_MainWindow(object):
             
             if result:
                 (tire_name, length, height, weight, 
-                 upper_screw, lower_screw, roll_speed, tuc_speed,
-                 conveyor_roller, conveyor_slope, roller_belt, cooling_belt, tuc_roller) = result
+                upper_screw, lower_screw, roll_speed, tuc_speed,
+                conveyor_roller, conveyor_slope, roller_belt, cooling_belt, tuc_roller) = result
                 
                 # Gán dữ liệu vào các trường
                 self.TireName.setText(str(tire_name) if tire_name else "")
@@ -912,21 +954,6 @@ class Ui_MainWindow(object):
                 conn.close()
 
 
-class ImportPlanWindow(QtWidgets.QWidget):
-    def __init__(self):
-        super().__init__()
-        from ImportPlan import ImportPlanWindow
-        self.ui = ImportPlanWindow()
-        self.ui.show()
-
-
-class ImportChangePlanWindow(QtWidgets.QWidget):
-    def __init__(self):
-        super().__init__()
-        from ChangePlan import ChangePlanWindow
-        self.ui = ChangePlanWindow()
-        self.ui.show()
-
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
@@ -949,6 +976,8 @@ if __name__ == "__main__":
     # Connect the Load Data To PLC button
     ui.LoadDataToPLC.clicked.connect(ui.load_to_plc)
     
+    # Connect the History and Plan button
+    ui.HistoryAndPlan.clicked.connect(ui.open_history_and_plan)
     # Fullscreen kiosk
     MainWindow.setWindowFlags(QtCore.Qt.FramelessWindowHint)
     MainWindow.showFullScreen()

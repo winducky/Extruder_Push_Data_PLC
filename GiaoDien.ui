@@ -33,7 +33,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>520</y>
+      <y>530</y>
       <width>1901</width>
       <height>141</height>
      </rect>
@@ -74,7 +74,7 @@ Chiều Dài
 
 &lt;p style=&quot;margin:0px; line-height:100%;&quot;&gt;
 &lt;span style=&quot;font-size:11pt; font-style:italic;&quot;&gt;
-Width
+Length
 &lt;/span&gt;
 &lt;/p&gt;
 &lt;/body&gt;
@@ -87,7 +87,7 @@ Width
        <bool>true</bool>
       </property>
      </widget>
-     <widget class="QLineEdit" name="Width">
+     <widget class="QLineEdit" name="Length">
       <property name="geometry">
        <rect>
         <x>120</x>
@@ -176,7 +176,7 @@ Height
        <bool>true</bool>
       </property>
      </widget>
-     <widget class="QLineEdit" name="Hieght">
+     <widget class="QLineEdit" name="Height">
       <property name="geometry">
        <rect>
         <x>150</x>
@@ -313,7 +313,7 @@ Weight
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>260</y>
+      <y>270</y>
       <width>1901</width>
       <height>241</height>
      </rect>
@@ -661,7 +661,7 @@ Roll TUC Speed
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>680</y>
+      <y>690</y>
       <width>1901</width>
       <height>161</height>
      </rect>
@@ -1360,6 +1360,63 @@ Change Plan</string>
      <iconset>
       <normalon>images/video-editing.png</normalon>
       <disabledoff>C:/Users/dan.it/.designer/backup/images/video-editing.png</disabledoff>
+     </iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>32</width>
+      <height>32</height>
+     </size>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="HistoryAndPlan">
+    <property name="geometry">
+     <rect>
+      <x>1680</x>
+      <y>220</y>
+      <width>231</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>12</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QPushButton {
+    background-color: #6c757d;
+    color: white;
+
+    border: none;
+    border-radius: 10px;
+
+    font-size: 12pt;
+    font-weight: 600;
+
+    padding: 6px 18px;
+}
+
+QPushButton:hover {
+    background-color: #7c848b;
+}
+
+QPushButton:pressed {
+    background-color: #5c636a;
+}</string>
+    </property>
+    <property name="text">
+     <string>Lịch Sử, Kế Hoạch
+History, Plan</string>
+    </property>
+    <property name="icon">
+     <iconset>
+      <normalon>images/project.png</normalon>
      </iconset>
     </property>
     <property name="iconSize">

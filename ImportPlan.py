@@ -9,6 +9,7 @@ from PyQt5.QtCore import pyqtSignal
 
 
 warnings.filterwarnings('ignore', category=DeprecationWarning)
+
 def get_resource_path(relative_path):
     """Lấy đường dẫn tuyệt đối đến resource (icon, image, etc.)"""
     if getattr(sys, 'frozen', False):  
@@ -17,8 +18,8 @@ def get_resource_path(relative_path):
         base_path = os.path.dirname(os.path.abspath(__file__))
 
     return os.path.join(base_path, relative_path)
-    
-    return os.path.join(base_path, relative_path)
+
+
 class Ui_ImportPlan(object):
     def setupUi(self, ImportPlan):
         ImportPlan.setObjectName("ImportPlan")
